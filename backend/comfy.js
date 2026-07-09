@@ -8,11 +8,11 @@ export const SERVER = (process.env.SERVER || 'http://127.0.0.1:8188').replace(/\
 const resolveWorkflowPath = (value, fallback) => path.resolve(here, '..', value || fallback)
 const tryOnWorkflowPath = resolveWorkflowPath(
   process.env.COMFY_TRYON_WORKFLOW_PATH || process.env.COMFY_WORKFLOW_PATH,
-  path.join('server', 'workflows', 'stitches1.json')
+  path.join('backend', 'workflows', 'stitches1.json')
 )
 const avatarWorkflowPath = resolveWorkflowPath(
   process.env.COMFY_AVATAR_WORKFLOW_PATH,
-  path.join('server', 'workflows', 'stitches2.json')
+  path.join('backend', 'workflows', 'stitches2.json')
 )
 const avatarDir = process.env.AVATAR_DIR || path.join(here, 'assets', 'avatars')
 const tryOnOutputNode = process.env.COMFY_TRYON_OUTPUT_NODE || process.env.COMFY_OUTPUT_NODE || '94'

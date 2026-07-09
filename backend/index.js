@@ -296,7 +296,7 @@ app.get('/api/projects/:id/result', async (req, res, next) => {
   }
 })
 
-const dist = path.join(root, 'dist')
+const dist = path.join(root, 'frontend', 'dist')
 if (fs.existsSync(dist)) {
   app.use(express.static(dist))
   app.get('/{*splat}', (_req, res) => res.sendFile(path.join(dist, 'index.html')))

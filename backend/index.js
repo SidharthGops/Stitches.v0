@@ -103,8 +103,6 @@ const buildAvatarPromptParts = (input = {}) => {
   const bodyType = cleanPart(input.bodyType, 'average build')
   const hair = cleanPart(input.hair, 'natural hair, neatly styled')
   const expression = cleanPart(input.expression, 'calm confident expression')
-  const pose = cleanPart(input.pose, 'relaxed front-facing pose')
-  const style = cleanPart(input.style, 'minimal contemporary styling')
   const background = cleanPart(input.background, 'seamless white studio')
   const keywords = cleanPart(input.keywords)
 
@@ -112,14 +110,12 @@ const buildAvatarPromptParts = (input = {}) => {
     `A realistic full-body studio avatar of a ${age} ${ethnicity} ${genderPresentation}.`,
     `Skin tone: ${skinTone}. Body type: ${bodyType}. Hair: ${hair}.`,
     keywords ? `Creative identity keywords: ${keywords}.` : '',
-    `${pose}.`,
     `${expression}.`,
     'Simple fitted neutral base outfit for avatar generation only.',
     'Minimal accessories, clean clothing silhouette, ready for garment replacement in the try-on stage.',
     `${background}.`,
     'Clean minimal backdrop, even soft diffused lighting, no harsh shadows, full-body framing with margin above head and below feet.',
-    `${style}.`,
-    'Photorealistic editorial fashion catalog style, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
+    'Photorealistic editorial fashion catalog image, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
   ].filter(Boolean).join(' ')
 
   return {

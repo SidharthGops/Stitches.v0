@@ -44,8 +44,6 @@ const avatarPromptDefaults = {
   bodyType: 'average build',
   hair: 'dark natural hair, neatly styled',
   expression: 'calm confident expression',
-  pose: 'relaxed front-facing pose',
-  style: 'minimal contemporary styling',
   background: 'seamless white studio',
   keywords: ''
 }
@@ -57,7 +55,6 @@ const buildAvatarPromptParts = (input) => ({
     input.keywords?.trim() ? `Creative identity keywords: ${input.keywords.trim()}.` : '',
     'Natural proportions, visible face, clear healthy skin, fashion ecommerce ready.'
   ].filter(Boolean).join(' ') + ' ' + [
-    `${input.pose}.`,
     `${input.expression}.`,
     'Full body visible head to toe, direct camera readability, hands and limbs natural.'
   ].join(' ') + ' ' + [
@@ -67,8 +64,7 @@ const buildAvatarPromptParts = (input) => ({
     `${input.background}.`,
     'Clean minimal backdrop, even soft diffused lighting, no harsh shadows, full-body framing with margin above head and below feet.'
   ].join(' ') + ' ' + [
-    `${input.style}.`,
-    'Photorealistic editorial fashion catalog style, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
+    'Photorealistic editorial fashion catalog image, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
   ].join(' ')
 })
 
@@ -340,7 +336,7 @@ function AvatarStep({ project, save, update, nav, busy, setBusy, error, setError
   return <Step number="02" title="Choose your canvas" intro="Pick from 20 preset avatars or create a custom AI avatar from guided attributes." footer={<StepFooter back onBack={() => nav('/create/upload')} next="Generate" busyLabel="Generating…" icon={<WandSparkles size={17} />} onNext={next} busy={busy || creating} />}>
     <div className="choice-grid avatars">
       <button type="button" onClick={() => setCreatorOpen(true)} className="choice-card avatar-card create-avatar-card">
-        <div className="avatar-visual create-avatar-visual"><WandSparkles size={30} /><b>Create an avatar</b><span>Design one with age, ethnicity, skin tone, style, and keywords.</span></div>
+        <div className="avatar-visual create-avatar-visual"><WandSparkles size={30} /><b>Create an avatar</b><span>Design one with age, ethnicity, skin tone, expression, and keywords.</span></div>
         <div className="choice-meta"><span><b>AI custom</b><small>Prompt-built avatar</small></span><i>+</i></div>
       </button>
       {customAvatars.map(a => <button type="button" key={a.id} onClick={() => chooseAvatar(a)} className={`choice-card avatar-card ${selected === a.id ? 'selected' : ''}`}>
@@ -366,8 +362,6 @@ function AvatarStep({ project, save, update, nav, busy, setBusy, error, setError
           <label><span>Body type</span><input value={avatarForm.bodyType} onChange={e => updateAvatarForm('bodyType', e.target.value)} placeholder="average build" /></label>
           <label><span>Hair</span><input value={avatarForm.hair} onChange={e => updateAvatarForm('hair', e.target.value)} placeholder="dark natural hair" /></label>
           <label><span>Expression</span><input value={avatarForm.expression} onChange={e => updateAvatarForm('expression', e.target.value)} placeholder="calm confident expression" /></label>
-          <label><span>Pose</span><input value={avatarForm.pose} onChange={e => updateAvatarForm('pose', e.target.value)} placeholder="relaxed front-facing pose" /></label>
-          <label><span>Styling</span><input value={avatarForm.style} onChange={e => updateAvatarForm('style', e.target.value)} placeholder="minimal contemporary styling" /></label>
           <label><span>Background</span><input value={avatarForm.background} onChange={e => updateAvatarForm('background', e.target.value)} placeholder="seamless white studio" /></label>
           <label className="wide"><span>Keywords</span><textarea value={avatarForm.keywords} onChange={e => updateAvatarForm('keywords', e.target.value)} maxLength={500} placeholder="e.g. premium streetwear, grounded, cinematic daylight, confident retail model" /></label>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, Download, ImagePlus, RotateCcw, Sparkles, Upload, WandSparkles, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Download, ImagePlus, Moon, RotateCcw, Sparkles, Sun, Upload, WandSparkles, X } from 'lucide-react'
 import { apiFetch, assetUrl } from './api.js'
 
 const stages = [
@@ -76,11 +76,20 @@ const getSaved = () => {
   try { return JSON.parse(localStorage.getItem('stitches-project')) || {} } catch { return {} }
 }
 
+const getSavedTheme = () => {
+  try {
+    return localStorage.getItem('stitches-theme') === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
 function App() {
   const [project, setProject] = useState(getSaved)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [checked, setChecked] = useState(false)
+  const [theme, setTheme] = useState(getSavedTheme)
 
   // The backend now keeps everything in memory, so any saved project
   // becomes invalid the moment the server restarts. Verify it before
@@ -103,6 +112,10 @@ function App() {
   }, [])
 
   useEffect(() => localStorage.setItem('stitches-project', JSON.stringify(project)), [project])
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('stitches-theme', theme)
+  }, [theme])
 
   // Pressing Enter anywhere activates whichever "primary" button is on
   // screen (the step footer's Next/Generate button, or the landing CTA).
@@ -126,18 +139,19 @@ function App() {
 
   const update = (data) => setProject((p) => ({ ...p, ...data }))
   const reset = () => setProject({})
+  const toggleTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark')
   if (!checked) return null
   return <Routes>
-    <Route path="/" element={<Landing />} />
-    <Route path="/create/*" element={<Studio project={project} update={update} reset={reset} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />
+    <Route path="/" element={<Landing theme={theme} toggleTheme={toggleTheme} />} />
+    <Route path="/create/*" element={<Studio project={project} update={update} reset={reset} busy={busy} setBusy={setBusy} error={error} setError={setError} theme={theme} toggleTheme={toggleTheme} />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 }
 
-function Landing() {
+function Landing({ theme, toggleTheme }) {
   const nav = useNavigate()
   return <main className="landing">
-    <nav className="landing-nav"><Logo /><span className="nav-note">AI visual studio for fashion</span><button className="text-button" onClick={() => nav('/create/upload')}>Open studio <ArrowRight size={16} /></button></nav>
+    <nav className="landing-nav"><Logo theme={theme} /><span className="nav-note">AI visual studio for fashion</span><div className="header-actions"><ThemeToggle theme={theme} onToggle={toggleTheme} /><button className="text-button" onClick={() => nav('/create/upload')}>Open studio <ArrowRight size={16} /></button></div></nav>
     <section className="hero">
       <div className="hero-copy">
         <span className="eyebrow"><Sparkles size={14} /> Garment placement, reimagined</span>
@@ -161,9 +175,16 @@ function Landing() {
   </main>
 }
 
-function Logo() { return <div className="logo"><span className="mark">S</span><span>STITCHES</span></div> }
+function Logo({ theme }) {
+  return <div className="logo"><img src={theme === 'dark' ? '/stitches-logo-on-dark.png' : '/stitches-logo-on-light.png'} alt="Stitches" /></div>
+}
 
-function Studio({ project, update, reset, busy, setBusy, error, setError }) {
+function ThemeToggle({ theme, onToggle }) {
+  const isDark = theme === 'dark'
+  return <button className="theme-toggle icon-button" title={`Switch to ${isDark ? 'light' : 'dark'} theme`} aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`} aria-pressed={isDark} onClick={onToggle}>{isDark ? <Sun size={14} /> : <Moon size={14} />}</button>
+}
+
+function Studio({ project, update, reset, busy, setBusy, error, setError, theme, toggleTheme }) {
   const loc = useLocation()
   const nav = useNavigate()
   const current = Math.max(0, stages.findIndex(s => s.path === loc.pathname))
@@ -175,7 +196,7 @@ function Studio({ project, update, reset, busy, setBusy, error, setError }) {
     }
   }
   return <div className="studio-shell">
-    <header className="studio-header"><Logo /><div className="progress-desktop">{stages.map((s, i) => <div key={s.path} className={`progress-item ${i === current ? 'active' : ''} ${i < current ? 'done' : ''}`}><span>{i < current ? <Check size={12} /> : i + 1}</span><b>{s.label}</b></div>)}</div><button className="icon-button" title="Close studio" onClick={() => nav('/')}><X size={20} /></button></header>
+    <header className="studio-header"><Logo theme={theme} /><div className="progress-desktop">{stages.map((s, i) => <div key={s.path} className={`progress-item ${i === current ? 'active' : ''} ${i < current ? 'done' : ''}`}><span>{i < current ? <Check size={12} /> : i + 1}</span><b>{s.label}</b></div>)}</div><div className="header-actions"><ThemeToggle theme={theme} onToggle={toggleTheme} /><button className="icon-button" title="Close studio" onClick={() => nav('/')}><X size={20} /></button></div></header>
     <div className="mobile-progress"><b>{current + 1} / {stages.length}</b><span>{stages[current]?.label}</span><i style={{ width: `${((current + 1) / stages.length) * 100}%` }} /></div>
     <Routes>
       <Route path="upload" element={<UploadStep project={project} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />

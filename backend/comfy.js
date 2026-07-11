@@ -3,18 +3,33 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
+const root = path.resolve(here, '..')
 
 export const SERVER = (process.env.SERVER || 'http://127.0.0.1:8188').replace(/\/$/, '')
-const resolveWorkflowPath = (value, fallback) => path.resolve(here, '..', value || fallback)
-const tryOnWorkflowPath = resolveWorkflowPath(
+const resolveProjectPath = (value, fallbacks) => {
+  const options = [value, ...fallbacks].filter(Boolean)
+  for (const option of options) {
+    if (path.isAbsolute(option) && fs.existsSync(option)) return option
+    for (const base of [root, here, process.cwd()]) {
+      const candidate = path.resolve(base, option)
+      if (fs.existsSync(candidate)) return candidate
+    }
+  }
+  const first = options[0]
+  return path.isAbsolute(first) ? first : path.resolve(root, first)
+}
+const tryOnWorkflowPath = resolveProjectPath(
   process.env.COMFY_TRYON_WORKFLOW_PATH || process.env.COMFY_WORKFLOW_PATH,
-  path.join('backend', 'workflows', 'stitches1.json')
+  [path.join('backend', 'workflows', 'stitches1.json'), path.join('workflows', 'stitches1.json')]
 )
-const avatarWorkflowPath = resolveWorkflowPath(
+const avatarWorkflowPath = resolveProjectPath(
   process.env.COMFY_AVATAR_WORKFLOW_PATH,
-  path.join('backend', 'workflows', 'stitches2.json')
+  [path.join('backend', 'workflows', 'stitches2.json'), path.join('workflows', 'stitches2.json')]
 )
-const avatarDir = process.env.AVATAR_DIR || path.join(here, 'assets', 'avatars')
+const avatarDir = resolveProjectPath(
+  process.env.AVATAR_DIR,
+  [path.join('backend', 'assets', 'avatars'), path.join('assets', 'avatars')]
+)
 const tryOnOutputNode = process.env.COMFY_TRYON_OUTPUT_NODE || process.env.COMFY_OUTPUT_NODE || '94'
 const avatarOutputNode = process.env.COMFY_AVATAR_OUTPUT_NODE || '43'
 const presetAvatarSources = ['zishan', 'johnyyy', 'nikkus1', 'pavanayi']

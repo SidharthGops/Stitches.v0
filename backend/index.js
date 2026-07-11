@@ -10,6 +10,31 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
 const avatarsDir = path.join(here, 'assets', 'avatars')
 const PORT = Number(process.env.PORT || 8787)
+const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS !== 'false'
+const normalizeOrigin = (value) => {
+  const origin = String(value || '').trim().replace(/\/+$/, '')
+  if (!origin) return ''
+  return /^https?:\/\//i.test(origin) ? origin : `https://${origin}`
+}
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+  normalizeOrigin(process.env.FRONTEND_URL),
+  normalizeOrigin(process.env.VERCEL_URL),
+  ...String(process.env.FRONTEND_ORIGINS || '').split(',').map(normalizeOrigin)
+].filter(Boolean))
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true
+  if (allowedOrigins.has(origin)) return true
+  if (!allowVercelPreviews) return false
+  try {
+    return new URL(origin).hostname.endsWith('.vercel.app')
+  } catch {
+    return false
+  }
+}
 
 // Everything lives in memory only. Nothing is written to disk, so there's no
 // projects.json and no uploads folder to go stale or need clearing — a
@@ -26,8 +51,29 @@ const upload = multer({
 })
 
 const app = express()
+app.use((req, res, next) => {
+  const origin = req.get('origin')
+  if (isAllowedOrigin(origin)) {
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin)
+      res.setHeader('Vary', 'Origin')
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    res.setHeader('Access-Control-Max-Age', '86400')
+  } else if (req.method === 'OPTIONS') {
+    return res.status(403).json({ error: 'This origin is not allowed.' })
+  }
+
+  if (req.method === 'OPTIONS') return res.sendStatus(204)
+  next()
+})
 app.use(express.json({ limit: '1mb' }))
 app.use('/avatars', express.static(avatarsDir))
+
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, service: 'stitches-api', time: new Date().toISOString() })
+})
 
 // Serves the in-memory garment buffer instead of a static uploads directory.
 app.get('/uploads/:id', (req, res) => {
@@ -306,6 +352,8 @@ app.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Image must be smaller than 10 MB.' : err.message })
   }
+  if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Request body is too large.' })
+  if (err instanceof SyntaxError && 'body' in err) return res.status(400).json({ error: 'Request body must be valid JSON.' })
   if (err instanceof ComfyError) return res.status(err.status).json({ error: err.message, detail: err.detail || undefined })
   console.error(err)
   res.status(500).json({ error: 'Something went wrong. Please try again.' })

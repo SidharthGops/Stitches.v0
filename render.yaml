@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: stitches-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start:backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: SERVER
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: ALLOW_VERCEL_PREVIEWS
+        value: true
+      - key: COMFY_TRYON_WORKFLOW_PATH
+        value: backend/workflows/stitches1.json
+      - key: COMFY_AVATAR_WORKFLOW_PATH
+        value: backend/workflows/stitches2.json
+      - key: AVATAR_DIR
+        value: backend/assets/avatars
+      - key: COMFY_TRYON_OUTPUT_NODE
+        value: 94
+      - key: COMFY_AVATAR_OUTPUT_NODE
+        value: 43

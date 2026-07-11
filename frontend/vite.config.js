@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
+const devApiProxy = process.env.VITE_DEV_API_PROXY || 'http://localhost:8787'
+
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
   plugins: [react()],
@@ -12,9 +14,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8787',
-      '/uploads': 'http://localhost:8787',
-      '/avatars': 'http://localhost:8787'
+      '/api': devApiProxy,
+      '/uploads': devApiProxy,
+      '/avatars': devApiProxy
     },
     allowedHosts: ['fraying-overreact-eraser.ngrok-free.dev']
   }

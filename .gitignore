@@ -1,6 +1,7 @@
 node_modules/
-server/uploads/*
-!server/uploads/.gitkeep
+frontend/dist/
+backend/uploads/*
+!backend/uploads/.gitkeep
 work/
 *.log
 .env

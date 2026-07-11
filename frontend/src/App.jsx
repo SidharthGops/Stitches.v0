@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Check, Download, ImagePlus, RotateCcw, Sparkles, Upload, WandSparkles, X } from 'lucide-react'
+import { apiFetch, assetUrl } from './api.js'
 
 const stages = [
   { path: '/create/upload', label: 'Garment' },
@@ -87,7 +88,7 @@ function App() {
     const verify = async () => {
       if (project.id) {
         try {
-          const res = await fetch(`/api/projects/${project.id}`)
+          const res = await apiFetch(`/api/projects/${project.id}`)
           if (!res.ok) throw new Error('stale')
         } catch {
           localStorage.removeItem('stitches-project')
@@ -163,7 +164,7 @@ function Studio({ project, update, reset, busy, setBusy, error, setError }) {
   const patchProject = async (data) => {
     update(data)
     if (project.id) {
-      const res = await fetch(`/api/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+      const res = await apiFetch(`/api/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
       if (!res.ok) throw new Error((await res.json()).error)
     }
   }
@@ -187,7 +188,7 @@ function Step({ number, title, intro, children, footer }) {
 function UploadStep({ project, update, nav, busy, setBusy, error, setError }) {
   const input = useRef()
   const [file, setFile] = useState(null)
-  const [preview, setPreview] = useState(project.garmentUrl || '')
+  const [preview, setPreview] = useState(project.garmentUrl ? assetUrl(project.garmentUrl) : '')
   const choose = (f) => { if (!f) return; setError(''); if (!f.type.startsWith('image/')) return setError('Please choose an image file.'); setFile(f); setPreview(URL.createObjectURL(f)) }
   const submit = async () => {
     if (!file && !project.id) return setError('Add a garment image to continue.')
@@ -195,7 +196,7 @@ function UploadStep({ project, update, nav, busy, setBusy, error, setError }) {
     setBusy(true); setError('')
     try {
       const body = new FormData(); body.append('garment', file)
-      const res = await fetch('/api/projects', { method: 'POST', body })
+      const res = await apiFetch('/api/projects', { method: 'POST', body })
       const data = await res.json(); if (!res.ok) throw new Error(data.error)
       update(data); nav('/create/avatar')
     } catch (e) { setError(e.message || 'Upload failed.') } finally { setBusy(false) }
@@ -227,7 +228,7 @@ function AvatarStep({ project, save, nav, error, setError }) {
   const waitForAvatar = async (jobId) => {
     const deadline = Date.now() + 10 * 60 * 1000
     while (Date.now() < deadline) {
-      const res = await fetch(`/api/avatars/generate/${encodeURIComponent(jobId)}/status`)
+      const res = await apiFetch(`/api/avatars/generate/${encodeURIComponent(jobId)}/status`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Could not check avatar progress.')
       if (data.status === 'complete') return data
@@ -241,7 +242,7 @@ function AvatarStep({ project, save, nav, error, setError }) {
     setCreatorError('')
     setError('')
     try {
-      const res = await fetch('/api/avatars/generate', {
+      const res = await apiFetch('/api/avatars/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(avatarForm)
@@ -294,7 +295,7 @@ function AvatarStep({ project, save, nav, error, setError }) {
         <div className="choice-meta"><span><b>AI custom</b><small>Prompt-built avatar</small></span><i>+</i></div>
       </button>
       {customAvatars.map(a => <button type="button" key={a.id} onClick={() => chooseAvatar(a)} className={`choice-card avatar-card ${selected === a.id ? 'selected' : ''}`}>
-        <div className="avatar-visual"><img className="avatar-photo" src={a.image} alt={`${a.name} avatar`}/><span className="dummy-tag">CUSTOM</span></div>
+        <div className="avatar-visual"><img className="avatar-photo" src={assetUrl(a.image)} alt={`${a.name} avatar`}/><span className="dummy-tag">CUSTOM</span></div>
         <div className="choice-meta"><span><b>{a.name}</b><small>{a.note}</small></span><i>{selected === a.id && <Check size={15}/>}</i></div>
       </button>)}
       {avatars.map(a => <button type="button" key={a.id} onClick={() => chooseAvatar(a)} className={`choice-card avatar-card ${selected === a.id ? 'selected' : ''}`}>
@@ -334,7 +335,7 @@ function DirectionStep({ project, save, update, nav, busy, setBusy, error, setEr
   const waitForGeneration = async (projectId) => {
     const deadline = Date.now() + 10 * 60 * 1000
     while (Date.now() < deadline) {
-      const res = await fetch(`/api/projects/${projectId}/status`)
+      const res = await apiFetch(`/api/projects/${projectId}/status`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Could not check generation progress.')
       update(data)
@@ -349,7 +350,7 @@ function DirectionStep({ project, save, update, nav, busy, setBusy, error, setEr
     setBusy(true); setError('')
     try {
       await save({prompt})
-      const res = await fetch(`/api/projects/${project.id}/generate`, {method:'POST'})
+      const res = await apiFetch(`/api/projects/${project.id}/generate`, {method:'POST'})
       const data = await res.json(); if (!res.ok) throw new Error(data.error)
       update(data)
       const completed = await waitForGeneration(project.id)
@@ -380,7 +381,7 @@ function ResultStep({ project, update, reset, nav }) {
     setFeedback(next)
     setResultError('')
     try {
-      const res = await fetch(`/api/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback: next || null }) })
+      const res = await apiFetch(`/api/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback: next || null }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       update(data)
@@ -394,13 +395,13 @@ function ResultStep({ project, update, reset, nav }) {
     setResultError('')
     setFeedback('')
     try {
-      const queuedResponse = await fetch(`/api/projects/${project.id}/generate`, { method: 'POST' })
+      const queuedResponse = await apiFetch(`/api/projects/${project.id}/generate`, { method: 'POST' })
       const queued = await queuedResponse.json()
       if (!queuedResponse.ok) throw new Error(queued.error)
       update(queued)
       const deadline = Date.now() + 10 * 60 * 1000
       while (Date.now() < deadline) {
-        const statusResponse = await fetch(`/api/projects/${project.id}/status`)
+        const statusResponse = await apiFetch(`/api/projects/${project.id}/status`)
         const status = await statusResponse.json()
         if (!statusResponse.ok) throw new Error(status.error)
         update(status)
@@ -416,7 +417,7 @@ function ResultStep({ project, update, reset, nav }) {
     }
   }
   if (!project.resultUrl) return <Navigate to="/create/direction" replace/>
-  return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14}/> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={project.resultUrl} download="stitches-placement.png"><Download size={17}/> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark"/> Regenerating…</> : <><WandSparkles size={17}/> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17}/> Start another</button></div><section className="feedback-block"><span>How did this placement turn out?</span><div><button className={feedback === 'good' ? 'selected' : ''} aria-pressed={feedback === 'good'} onClick={() => submitFeedback('good')}>👍 Good</button><button className={feedback === 'bad' ? 'selected' : ''} aria-pressed={feedback === 'bad'} onClick={() => submitFeedback('bad')}>👎 Bad</button></div></section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a=>a.id===project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={project.garmentUrl} alt="Uploaded garment"/></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={project.resultUrl} alt="Generated garment placement"/>{regenerating && <span className="generation-overlay"><i className="spinner"/> Creating a new version…</span>}</div></figure></section></main>
+  return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14}/> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={assetUrl(project.resultUrl)} download="stitches-placement.png"><Download size={17}/> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark"/> Regenerating…</> : <><WandSparkles size={17}/> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17}/> Start another</button></div><section className="feedback-block"><span>How did this placement turn out?</span><div><button className={feedback === 'good' ? 'selected' : ''} aria-pressed={feedback === 'good'} onClick={() => submitFeedback('good')}>👍 Good</button><button className={feedback === 'bad' ? 'selected' : ''} aria-pressed={feedback === 'bad'} onClick={() => submitFeedback('bad')}>👎 Bad</button></div></section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a=>a.id===project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={assetUrl(project.garmentUrl)} alt="Uploaded garment"/></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={assetUrl(project.resultUrl)} alt="Generated garment placement"/>{regenerating && <span className="generation-overlay"><i className="spinner"/> Creating a new version…</span>}</div></figure></section></main>
 }
 
 function StepFooter({ back, onBack, next, onNext, busy, busyLabel = 'Working…', icon }) { return <footer className="step-footer"><div>{back && <button className="secondary" onClick={onBack} disabled={busy}><ArrowLeft size={17}/> Back</button>}</div><button className="primary" onClick={onNext} disabled={busy}>{busy ? <><span className="spinner"/> {busyLabel}</> : <>{icon}<span className="primary-text">{next}{icon && <small className="primary-hint">CTRL+ENTER</small>}</span><ArrowRight size={17}/></>}</button></footer> }

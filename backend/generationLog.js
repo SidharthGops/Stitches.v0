@@ -7,9 +7,7 @@ const BUCKET = process.env.SUPABASE_LOG_BUCKET || 'generation-logs'
 const enabled = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
 const supabase = enabled ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) : null
 
-if (enabled) {
-    console.log(`✅ generationLog: Supabase logging enabled (bucket: ${BUCKET})`)
-} else {
+if (!enabled) {
     console.warn('⚠️  generationLog: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — generation logging is disabled.')
 }
 
@@ -45,18 +43,13 @@ export const logGeneration = async ({
     resultBuffer,
     resultMimetype
 }) => {
-    if (!enabled) {
-        console.warn(`generationLog: skipped for project ${id} — logging disabled (missing env vars).`)
-        return null
-    }
-    console.log(`generationLog: uploading images for project ${id}…`)
+    if (!enabled) return null
     try {
         const [avatar_image_url, garment_no_bg_url, result_image_url] = await Promise.all([
             uploadOne(avatarBuffer, avatarMimetype, `${id}/avatar`),
             uploadOne(garmentBuffer, garmentMimetype, `${id}/garment`),
             uploadOne(resultBuffer, resultMimetype, `${id}/result`)
         ])
-        console.log(`generationLog: images uploaded for project ${id}, inserting row…`)
 
         const { data, error } = await supabase
             .from('generation-logs')
@@ -65,10 +58,9 @@ export const logGeneration = async ({
             .single()
 
         if (error) throw error
-        console.log(`generationLog: row inserted for project ${id} — log id ${data.id}`)
         return data.id
     } catch (err) {
-        console.error(`generationLog: FAILED to log generation for project ${id} —`, err.message || err)
+        console.error('generationLog: failed to log generation —', err.message)
         return null
     }
 }

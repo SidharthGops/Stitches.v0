@@ -145,7 +145,14 @@ export const submitAvatarPrompt = async ({ prompt, promptParts }) => {
   return { promptId: payload.prompt_id, outputNode: avatarOutputNode, workflow: path.basename(avatarWorkflowPath) }
 }
 
-export const submitProject = async (project, garmentBuffer, garmentFilename, avatarFile) => {
+const mimeFromFilename = (filename = '') => {
+  const ext = path.extname(filename).toLowerCase()
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg'
+  if (ext === '.webp') return 'image/webp'
+  return 'image/png'
+}
+
+export const submitProject = async (project, garmentBuffer, garmentFilename, avatarFile, garmentMimetype = 'image/png') => {
   const workflow = loadWorkflow(tryOnWorkflowPath)
   requireInput(workflow, '76', 'image')
   requireInput(workflow, '81', 'image')
@@ -157,10 +164,12 @@ export const submitProject = async (project, garmentBuffer, garmentFilename, ava
   const avatarFilename = avatarFile?.filename || path.basename(avatarPath)
   let garmentToUpload = garmentBuffer;
   let garmentUploadName = garmentFilename;
+  let garmentToUploadMimetype = garmentMimetype;
 
   try {
     garmentToUpload = await removeBackground(garmentBuffer);
     garmentUploadName = "garment.png";
+    garmentToUploadMimetype = "image/png";
   } catch (err) {
   }
   const [avatarName, garmentName] = await Promise.all([
@@ -178,7 +187,18 @@ export const submitProject = async (project, garmentBuffer, garmentFilename, ava
   })
   const payload = await response.json()
   if (!payload.prompt_id) throw new ComfyError('ComfyUI queue response did not include a prompt_id.')
-  return { promptId: payload.prompt_id, avatarName, garmentName, outputNode: tryOnOutputNode, workflow: path.basename(tryOnWorkflowPath) }
+  return {
+    promptId: payload.prompt_id,
+    avatarName,
+    garmentName,
+    outputNode: tryOnOutputNode,
+    workflow: path.basename(tryOnWorkflowPath),
+    // Handed back purely so the caller can log these to Supabase — not used by ComfyUI itself.
+    avatarBuffer,
+    avatarMimetype: mimeFromFilename(avatarFilename),
+    garmentLogBuffer: garmentToUpload,
+    garmentLogMimetype: garmentToUploadMimetype
+  }
 }
 
 export const getProjectStatus = async (promptId, nodeId) => {

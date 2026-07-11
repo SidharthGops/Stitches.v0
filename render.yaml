@@ -27,3 +27,11 @@ services:
         value: 94
       - key: COMFY_AVATAR_OUTPUT_NODE
         value: 43
+      - key: REMOVE_BG_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_LOG_BUCKET
+        value: generation-logs

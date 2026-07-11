@@ -353,8 +353,6 @@ app.get('/api/projects/:id/status', async (req, res, next) => {
             if (logId) project.logId = logId
           })
           .catch((error) => console.error('generation logging failed —', error.message))
-      } else if (!project.logId) {
-        console.warn(`generationLog: no pending assets found for project ${project.id} — skipping log (this generation won't appear in Supabase).`)
       }
     }
     res.json(project)

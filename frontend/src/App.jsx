@@ -359,31 +359,31 @@ function AvatarStep({ project, save, update, nav, busy, setBusy, error, setError
 
 function ResultStep({ project, update, reset, nav }) {
   const [regenerating, setRegenerating] = useState(false)
-  const [feedback, setFeedback] = useState(project.feedback || '')
+  const [rating, setRating] = useState(project.feedback || 5)
+  const [ratingSaved, setRatingSaved] = useState(project.feedback != null)
   const [resultError, setResultError] = useState('')
   const startOver = () => {
     localStorage.removeItem('stitches-project')
     reset()
     nav('/create/upload', { replace: true })
   }
-  const submitFeedback = async (value) => {
-    const next = feedback === value ? '' : value
-    setFeedback(next)
+  const commitRating = async (value) => {
     setResultError('')
     try {
-      const res = await apiFetch(`/api/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback: next || null }) })
+      const res = await apiFetch(`/api/projects/${project.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedback: value }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       update(data)
+      setRatingSaved(true)
     } catch (error) {
-      setFeedback(feedback)
       setResultError(error.message || 'Could not save feedback.')
     }
   }
   const regenerate = async () => {
     setRegenerating(true)
     setResultError('')
-    setFeedback('')
+    setRating(5)
+    setRatingSaved(false)
     try {
       const queuedResponse = await apiFetch(`/api/projects/${project.id}/generate`, { method: 'POST' })
       const queued = await queuedResponse.json()
@@ -407,7 +407,7 @@ function ResultStep({ project, update, reset, nav }) {
     }
   }
   if (!project.resultUrl) return <Navigate to="/create/avatar" replace />
-  return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14} /> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={assetUrl(project.resultUrl)} download="stitches-placement.png"><Download size={17} /> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark" /> Regenerating…</> : <><WandSparkles size={17} /> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17} /> Start another</button></div><section className="feedback-block"><span>How did this placement turn out?</span><div><button className={feedback === 'good' ? 'selected' : ''} aria-pressed={feedback === 'good'} onClick={() => submitFeedback('good')}>👍 Good</button><button className={feedback === 'bad' ? 'selected' : ''} aria-pressed={feedback === 'bad'} onClick={() => submitFeedback('bad')}>👎 Bad</button></div></section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a => a.id === project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={assetUrl(project.garmentUrl)} alt="Uploaded garment" /></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={assetUrl(project.resultUrl)} alt="Generated garment placement" />{regenerating && <span className="generation-overlay"><i className="spinner" /> Creating a new version…</span>}</div></figure></section></main>
+  return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14} /> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={assetUrl(project.resultUrl)} download="stitches-placement.png"><Download size={17} /> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark" /> Regenerating…</> : <><WandSparkles size={17} /> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17} /> Start another</button></div><section className="feedback-block rating-block"><span>How did this placement turn out?</span><div className="rating-slider"><input type="range" min="1" max="10" step="1" value={rating} onChange={(e) => setRating(Number(e.target.value))} onMouseUp={(e) => commitRating(Number(e.target.value))} onTouchEnd={(e) => commitRating(Number(e.target.value))} aria-label="Rate this placement from 1 to 10" /><span className="rating-value">{rating}/10</span></div>{ratingSaved && <span className="rating-saved">Saved</span>}</section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a => a.id === project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={assetUrl(project.garmentUrl)} alt="Uploaded garment" /></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={assetUrl(project.resultUrl)} alt="Generated garment placement" />{regenerating && <span className="generation-overlay"><i className="spinner" /> Creating a new version…</span>}</div></figure></section></main>
 }
 
 function StepFooter({ back, onBack, next, onNext, busy, busyLabel = 'Working…', icon }) { return <footer className="step-footer"><div>{back && <button className="secondary" onClick={onBack} disabled={busy}><ArrowLeft size={17} /> Back</button>}</div><button className="primary" onClick={onNext} disabled={busy}>{busy ? <><span className="spinner" /> {busyLabel}</> : <>{icon}<span className="primary-text">{next}{icon && <small className="primary-hint">CTRL+ENTER</small>}</span><ArrowRight size={17} /></>}</button></footer> }

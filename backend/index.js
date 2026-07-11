@@ -1,3 +1,4 @@
+import './env.js'
 import express from 'express'
 import multer from 'multer'
 import path from 'path'
@@ -102,7 +103,7 @@ const buildAvatarPromptParts = (input = {}) => {
   const expression = cleanPart(input.expression, 'calm confident expression')
   const pose = cleanPart(input.pose, 'relaxed front-facing pose')
   const style = cleanPart(input.style, 'minimal contemporary styling')
-  const background = cleanPart(input.background, 'plain warm neutral studio background')
+  const background = cleanPart(input.background, 'seamless white studio')
   const keywords = cleanPart(input.keywords)
 
   const prompt = [
@@ -362,4 +363,11 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`Stitches API ready at http://localhost:${PORT}`)
   console.log(`ComfyUI server: ${SERVER}`)
+  if (/^https?:\/\/(127\.0\.0\.1|localhost)/i.test(SERVER)) {
+    console.warn(
+      '⚠️  SERVER is falling back to localhost. If this is deployed (e.g. Render), ' +
+      'the SERVER environment variable is missing or empty in the dashboard — ' +
+      'set it to your current ngrok URL. Remember free ngrok URLs change on every restart.'
+    )
+  }
 })

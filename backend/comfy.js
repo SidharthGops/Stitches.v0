@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { removeBackground } from "./removeBg.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
@@ -154,10 +155,18 @@ export const submitProject = async (project, garmentBuffer, garmentFilename, ava
   const avatarPath = avatarFile ? null : findAvatarPath(project.selectedAvatar)
   const avatarBuffer = avatarFile?.buffer || fs.readFileSync(avatarPath)
   const avatarFilename = avatarFile?.filename || path.basename(avatarPath)
+  let garmentToUpload = garmentBuffer;
+  let garmentUploadName = garmentFilename;
+
+  try {
+    garmentToUpload = await removeBackground(garmentBuffer);
+    garmentUploadName = "garment.png";
+  } catch (err) {
+  }
   const [avatarName, garmentName] = await Promise.all([
     uploadImage(avatarBuffer, avatarFilename),
-    uploadImage(garmentBuffer, garmentFilename)
-  ])
+    uploadImage(garmentToUpload, garmentUploadName)
+  ]);
   workflow['76'].inputs.image = avatarName
   workflow['81'].inputs.image = garmentName
   if (project.prompt?.trim()) workflow['135'].inputs.text = project.prompt.trim()

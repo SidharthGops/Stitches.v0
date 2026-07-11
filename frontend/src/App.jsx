@@ -6,9 +6,13 @@ import { apiFetch, assetUrl } from './api.js'
 const stages = [
   { path: '/create/upload', label: 'Garment' },
   { path: '/create/avatar', label: 'Avatar' },
-  { path: '/create/direction', label: 'Direction' },
   { path: '/create/result', label: 'Result' }
 ]
+
+// Direction text is no longer collected from the user — it's built
+// automatically once an avatar is picked, using this fixed template.
+const buildPresetPrompt = (avatarName, garmentName) =>
+  `Replace the outfit of the ${avatarName} with the garment uploaded as ${garmentName}.`
 const avatars = [
   { id: 'preset-01', name: 'Asha', note: 'Warm editorial', skin: '#9f6549', hair: '#201b19', outfit: '#efe7da', backdrop: '#d8c7b7' },
   { id: 'preset-02', name: 'Jonas', note: 'Relaxed portrait', skin: '#c68964', hair: '#15120f', outfit: '#e7e1d4', backdrop: '#cbd3c7' },
@@ -42,7 +46,7 @@ const avatarPromptDefaults = {
   expression: 'calm confident expression',
   pose: 'relaxed front-facing pose',
   style: 'minimal contemporary styling',
-  background: 'plain warm neutral studio background',
+  background: 'seamless white studio',
   keywords: ''
 }
 const buildAvatarPromptParts = (input) => ({
@@ -67,10 +71,7 @@ const buildAvatarPromptParts = (input) => ({
     'Photorealistic editorial fashion catalog style, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
   ].join(' ')
 })
-const buildAvatarPromptPreview = (input) => {
-  const parts = buildAvatarPromptParts(input)
-  return `Node 10 gender: ${parts.gender}\n\nNode 11 prompt: ${parts.prompt}`
-}
+
 const getSaved = () => {
   try { return JSON.parse(localStorage.getItem('stitches-project')) || {} } catch { return {} }
 }
@@ -146,8 +147,13 @@ function Landing() {
         <small>No design experience needed · Preview workflow</small>
       </div>
       <div className="hero-art" aria-label="Fashion campaign preview">
-        <div className="poster poster-a"><MiniAvatar skin="#9f6549" hair="#201b19" /><span>FORM / 01</span></div>
-        <div className="poster poster-b"><MiniAvatar skin="#c68964" hair="#121110" /><span>STITCHES / SS26</span></div>
+        <div className="poster poster-a">
+          <img src="/port2.jpeg" alt="Fashion visual 1" />
+        </div>
+
+        <div className="poster poster-b">
+          <img src="/port1.jpeg" alt="Fashion visual 2" />
+        </div>
         <div className="art-stamp">BRAND<br />TRUE<br />VISUALS</div>
       </div>
     </section>
@@ -173,8 +179,7 @@ function Studio({ project, update, reset, busy, setBusy, error, setError }) {
     <div className="mobile-progress"><b>{current + 1} / {stages.length}</b><span>{stages[current]?.label}</span><i style={{ width: `${((current + 1) / stages.length) * 100}%` }} /></div>
     <Routes>
       <Route path="upload" element={<UploadStep project={project} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />
-      <Route path="avatar" element={<AvatarStep project={project} save={patchProject} nav={nav} error={error} setError={setError} />} />
-      <Route path="direction" element={<DirectionStep project={project} save={patchProject} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />
+      <Route path="avatar" element={<AvatarStep project={project} save={patchProject} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />
       <Route path="result" element={<ResultStep project={project} update={update} reset={reset} nav={nav} />} />
       <Route path="*" element={<Navigate to="upload" replace />} />
     </Routes>
@@ -211,7 +216,7 @@ function UploadStep({ project, update, nav, busy, setBusy, error, setError }) {
   </Step>
 }
 
-function AvatarStep({ project, save, nav, error, setError }) {
+function AvatarStep({ project, save, update, nav, busy, setBusy, error, setError }) {
   const [selected, setSelected] = useState(project.selectedAvatar || '')
   const [customAvatars, setCustomAvatars] = useState(project.customAvatars || [])
   const [creatorOpen, setCreatorOpen] = useState(false)
@@ -219,7 +224,6 @@ function AvatarStep({ project, save, nav, error, setError }) {
   const [creatorError, setCreatorError] = useState('')
   const [avatarForm, setAvatarForm] = useState(avatarPromptDefaults)
   const allAvatars = [...customAvatars, ...avatars]
-  const promptPreview = buildAvatarPromptPreview(avatarForm)
   const chooseAvatar = (avatar) => {
     setSelected(avatar.id)
     setError('')
@@ -272,23 +276,47 @@ function AvatarStep({ project, save, nav, error, setError }) {
       setCreating(false)
     }
   }
+  const waitForGeneration = async (projectId) => {
+    const deadline = Date.now() + 10 * 60 * 1000
+    while (Date.now() < deadline) {
+      const res = await apiFetch(`/api/projects/${projectId}/status`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Could not check generation progress.')
+      update(data)
+      if (data.status === 'complete') return data
+      if (data.status === 'failed') throw new Error(data.error || 'Generation failed.')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    throw new Error('Generation is taking longer than expected. Your queued job is safe; try again shortly.')
+  }
   const next = async () => {
     if (!selected) return setError('Choose an avatar to continue.')
+    setBusy(true); setError('')
     try {
       const avatar = allAvatars.find(a => a.id === selected)
+      const avatarName = avatar?.name || 'Selected avatar'
+      const garmentName = project.garmentName || 'DRESS'
       await save({
         selectedAvatar: selected,
-        selectedAvatarName: avatar?.name || 'Selected avatar',
+        selectedAvatarName: avatarName,
         avatarPrompt: avatar?.prompt || null,
-        customAvatars
+        customAvatars,
+        prompt: buildPresetPrompt(avatarName, garmentName)
       })
-      nav('/create/direction')
+      const res = await apiFetch(`/api/projects/${project.id}/generate`, { method: 'POST' })
+      const data = await res.json(); if (!res.ok) throw new Error(data.error)
+      update(data)
+      const completed = await waitForGeneration(project.id)
+      update(completed)
+      nav('/create/result')
     } catch (e) {
-      setError(e.message || 'Could not save your avatar selection. Please try again.')
+      setError(e.message || 'Could not generate this visual. Please try again.')
+    } finally {
+      setBusy(false)
     }
   }
   if (!project.id) return <Navigate to="/create/upload" replace />
-  return <Step number="02" title="Choose your canvas" intro="Pick from 20 preset avatars or create a custom AI avatar from guided attributes." footer={<StepFooter back onBack={() => nav('/create/upload')} next="Add direction" onNext={next} busy={creating} />}>
+  return <Step number="02" title="Choose your canvas" intro="Pick from 20 preset avatars or create a custom AI avatar from guided attributes." footer={<StepFooter back onBack={() => nav('/create/upload')} next="Generate" busyLabel="Generating…" icon={<WandSparkles size={17} />} onNext={next} busy={busy || creating} />}>
     <div className="choice-grid avatars">
       <button type="button" onClick={() => setCreatorOpen(true)} className="choice-card avatar-card create-avatar-card">
         <div className="avatar-visual create-avatar-visual"><WandSparkles size={30} /><b>Create an avatar</b><span>Design one with age, ethnicity, skin tone, style, and keywords.</span></div>
@@ -319,51 +347,13 @@ function AvatarStep({ project, save, nav, error, setError }) {
           <label><span>Expression</span><input value={avatarForm.expression} onChange={e => updateAvatarForm('expression', e.target.value)} placeholder="calm confident expression" /></label>
           <label><span>Pose</span><input value={avatarForm.pose} onChange={e => updateAvatarForm('pose', e.target.value)} placeholder="relaxed front-facing pose" /></label>
           <label><span>Styling</span><input value={avatarForm.style} onChange={e => updateAvatarForm('style', e.target.value)} placeholder="minimal contemporary styling" /></label>
-          <label><span>Background</span><input value={avatarForm.background} onChange={e => updateAvatarForm('background', e.target.value)} placeholder="plain warm neutral studio" /></label>
+          <label><span>Background</span><input value={avatarForm.background} onChange={e => updateAvatarForm('background', e.target.value)} placeholder="seamless white studio" /></label>
           <label className="wide"><span>Keywords</span><textarea value={avatarForm.keywords} onChange={e => updateAvatarForm('keywords', e.target.value)} maxLength={500} placeholder="e.g. premium streetwear, grounded, cinematic daylight, confident retail model" /></label>
         </div>
-        <div className="prompt-preview"><div><span>Prompt preview</span><small>{promptPreview.length} characters</small></div><p>{promptPreview}</p></div>
         {creatorError && <p className="error">{creatorError}</p>}
         <div className="modal-actions"><button className="secondary" onClick={() => setCreatorOpen(false)} disabled={creating}>Cancel</button><button className="primary" onClick={createAvatar} disabled={creating}>{creating ? <><span className="spinner" /> Creating avatar…</> : <><WandSparkles size={17} /> Generate avatar</>}</button></div>
       </section>
     </div>}
-  </Step>
-}
-
-function DirectionStep({ project, save, update, nav, busy, setBusy, error, setError }) {
-  const [prompt, setPrompt] = useState(project.prompt || '')
-  const waitForGeneration = async (projectId) => {
-    const deadline = Date.now() + 10 * 60 * 1000
-    while (Date.now() < deadline) {
-      const res = await apiFetch(`/api/projects/${projectId}/status`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Could not check generation progress.')
-      update(data)
-      if (data.status === 'complete') return data
-      if (data.status === 'failed') throw new Error(data.error || 'Generation failed.')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-    throw new Error('Generation is taking longer than expected. Your queued job is safe; try again shortly.')
-  }
-  const generate = async () => {
-    if (!project.id || !project.selectedAvatar) return setError('A previous selection is missing. Please revisit the earlier steps.')
-    setBusy(true); setError('')
-    try {
-      await save({ prompt })
-      const res = await apiFetch(`/api/projects/${project.id}/generate`, { method: 'POST' })
-      const data = await res.json(); if (!res.ok) throw new Error(data.error)
-      update(data)
-      const completed = await waitForGeneration(project.id)
-      update(completed)
-      nav('/create/result')
-    } catch (e) { setError(e.message) } finally { setBusy(false) }
-  }
-  if (!project.id) return <Navigate to="/create/upload" replace />
-  if (!project.selectedAvatar) return <Navigate to="/create/avatar" replace />
-  return <Step number="03" title="Add your point of view" intro="Optional: tell the studio about styling, mood, pose, or small details you want to see." footer={<StepFooter back onBack={() => nav('/create/avatar')} next="Generate" busyLabel="Generating…" icon={<WandSparkles size={17} />} onNext={generate} busy={busy} />}>
-    <div className="prompt-card"><div className="prompt-top"><span>CREATIVE DIRECTION</span><span className="optional">OPTIONAL</span></div><textarea maxLength={3000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="e.g. Minimal styling, soft morning light, confident pose, keep the silhouette relaxed…" /><div className="prompt-bottom"><span>{prompt.length} / 3000</span></div></div>
-    <div className="suggestions"><span>Try a direction</span><div>{['Soft natural light', 'Confident editorial pose', 'Minimal accessories'].map(s => <button key={s} onClick={() => setPrompt(p => p ? `${p}, ${s.toLowerCase()}` : s)}>{s}</button>)}</div></div>
-    {error && <p className="error">{error}</p>}
   </Step>
 }
 
@@ -416,7 +406,7 @@ function ResultStep({ project, update, reset, nav }) {
       setRegenerating(false)
     }
   }
-  if (!project.resultUrl) return <Navigate to="/create/direction" replace />
+  if (!project.resultUrl) return <Navigate to="/create/avatar" replace />
   return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14} /> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={assetUrl(project.resultUrl)} download="stitches-placement.png"><Download size={17} /> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark" /> Regenerating…</> : <><WandSparkles size={17} /> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17} /> Start another</button></div><section className="feedback-block"><span>How did this placement turn out?</span><div><button className={feedback === 'good' ? 'selected' : ''} aria-pressed={feedback === 'good'} onClick={() => submitFeedback('good')}>👍 Good</button><button className={feedback === 'bad' ? 'selected' : ''} aria-pressed={feedback === 'bad'} onClick={() => submitFeedback('bad')}>👎 Bad</button></div></section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a => a.id === project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={assetUrl(project.garmentUrl)} alt="Uploaded garment" /></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={assetUrl(project.resultUrl)} alt="Generated garment placement" />{regenerating && <span className="generation-overlay"><i className="spinner" /> Creating a new version…</span>}</div></figure></section></main>
 }
 

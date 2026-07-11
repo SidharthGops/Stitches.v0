@@ -36,7 +36,7 @@ const avatarPromptDefaults = {
   age: 'mid 20s',
   ethnicity: 'South Asian',
   skinTone: 'warm medium brown',
-  genderPresentation: 'androgynous fashion model',
+  genderPresentation: 'fashion model',
   bodyType: 'average build',
   hair: 'dark natural hair, neatly styled',
   expression: 'calm confident expression',
@@ -136,19 +136,19 @@ function App() {
 function Landing() {
   const nav = useNavigate()
   return <main className="landing">
-    <nav className="landing-nav"><Logo /><span className="nav-note">AI visual studio for fashion</span><button className="text-button" onClick={() => nav('/create/upload')}>Open studio <ArrowRight size={16}/></button></nav>
+    <nav className="landing-nav"><Logo /><span className="nav-note">AI visual studio for fashion</span><button className="text-button" onClick={() => nav('/create/upload')}>Open studio <ArrowRight size={16} /></button></nav>
     <section className="hero">
       <div className="hero-copy">
-        <span className="eyebrow"><Sparkles size={14}/> Garment placement, reimagined</span>
-        <h1>Your garment.<br/><em>Everywhere it belongs.</em></h1>
+        <span className="eyebrow"><Sparkles size={14} /> Garment placement, reimagined</span>
+        <h1>Your garment.<br /><em>Everywhere it belongs.</em></h1>
         <p>Place your products on brand-ready avatars with your own creative direction — at the speed of AI and with an eye for every detail.</p>
-        <button className="primary large" onClick={() => nav('/create/upload')}>Create your first visual <ArrowRight size={18}/></button>
+        <button className="primary large" onClick={() => nav('/create/upload')}>Create your first visual <ArrowRight size={18} /></button>
         <small>No design experience needed · Preview workflow</small>
       </div>
       <div className="hero-art" aria-label="Fashion campaign preview">
-        <div className="poster poster-a"><MiniAvatar skin="#9f6549" hair="#201b19"/><span>FORM / 01</span></div>
-        <div className="poster poster-b"><MiniAvatar skin="#c68964" hair="#121110"/><span>STITCHES / SS26</span></div>
-        <div className="art-stamp">BRAND<br/>TRUE<br/>VISUALS</div>
+        <div className="poster poster-a"><MiniAvatar skin="#9f6549" hair="#201b19" /><span>FORM / 01</span></div>
+        <div className="poster poster-b"><MiniAvatar skin="#c68964" hair="#121110" /><span>STITCHES / SS26</span></div>
+        <div className="art-stamp">BRAND<br />TRUE<br />VISUALS</div>
       </div>
     </section>
     <footer className="landing-footer"><span>Preserve the product</span><span>Protect the brand DNA</span><span>Move at culture speed</span></footer>
@@ -169,13 +169,13 @@ function Studio({ project, update, reset, busy, setBusy, error, setError }) {
     }
   }
   return <div className="studio-shell">
-    <header className="studio-header"><Logo /><div className="progress-desktop">{stages.map((s, i) => <div key={s.path} className={`progress-item ${i === current ? 'active' : ''} ${i < current ? 'done' : ''}`}><span>{i < current ? <Check size={12}/> : i + 1}</span><b>{s.label}</b></div>)}</div><button className="icon-button" title="Close studio" onClick={() => nav('/')}><X size={20}/></button></header>
-    <div className="mobile-progress"><b>{current + 1} / {stages.length}</b><span>{stages[current]?.label}</span><i style={{width: `${((current + 1) / stages.length) * 100}%`}}/></div>
+    <header className="studio-header"><Logo /><div className="progress-desktop">{stages.map((s, i) => <div key={s.path} className={`progress-item ${i === current ? 'active' : ''} ${i < current ? 'done' : ''}`}><span>{i < current ? <Check size={12} /> : i + 1}</span><b>{s.label}</b></div>)}</div><button className="icon-button" title="Close studio" onClick={() => nav('/')}><X size={20} /></button></header>
+    <div className="mobile-progress"><b>{current + 1} / {stages.length}</b><span>{stages[current]?.label}</span><i style={{ width: `${((current + 1) / stages.length) * 100}%` }} /></div>
     <Routes>
-      <Route path="upload" element={<UploadStep project={project} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError}/>} />
-      <Route path="avatar" element={<AvatarStep project={project} save={patchProject} nav={nav} error={error} setError={setError}/>} />
-      <Route path="direction" element={<DirectionStep project={project} save={patchProject} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError}/>} />
-      <Route path="result" element={<ResultStep project={project} update={update} reset={reset} nav={nav}/>} />
+      <Route path="upload" element={<UploadStep project={project} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />
+      <Route path="avatar" element={<AvatarStep project={project} save={patchProject} nav={nav} error={error} setError={setError} />} />
+      <Route path="direction" element={<DirectionStep project={project} save={patchProject} update={update} nav={nav} busy={busy} setBusy={setBusy} error={error} setError={setError} />} />
+      <Route path="result" element={<ResultStep project={project} update={update} reset={reset} nav={nav} />} />
       <Route path="*" element={<Navigate to="upload" replace />} />
     </Routes>
   </div>
@@ -201,13 +201,13 @@ function UploadStep({ project, update, nav, busy, setBusy, error, setError }) {
       update(data); nav('/create/avatar')
     } catch (e) { setError(e.message || 'Upload failed.') } finally { setBusy(false) }
   }
-  return <Step number="01" title="Start with the garment" intro="Upload a clean product image. A front-facing shot on a plain background works beautifully." footer={<StepFooter next="Choose avatar" onNext={submit} busy={busy}/> }>
+  return <Step number="01" title="Start with the garment" intro="Upload a clean product image. A front-facing shot on a plain background works beautifully." footer={<StepFooter next="Choose avatar" onNext={submit} busy={busy} />}>
     <div className={`upload-zone ${preview ? 'has-preview' : ''}`} onClick={() => input.current.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); choose(e.dataTransfer.files[0]) }}>
-      <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => choose(e.target.files[0])}/>
-      {preview ? <><img src={preview} alt="Garment preview"/><button className="replace-pill"><RotateCcw size={14}/> Replace image</button></> : <><div className="upload-icon"><ImagePlus size={28}/></div><h3>Drop your garment here</h3><p>or click to browse your files</p><span>PNG, JPG or WEBP · Max 10 MB</span></>}
+      <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={e => choose(e.target.files[0])} />
+      {preview ? <><img src={preview} alt="Garment preview" /><button className="replace-pill"><RotateCcw size={14} /> Replace image</button></> : <><div className="upload-icon"><ImagePlus size={28} /></div><h3>Drop your garment here</h3><p>or click to browse your files</p><span>PNG, JPG or WEBP · Max 10 MB</span></>}
     </div>
     {error && <p className="error">{error}</p>}
-    <div className="tip"><Sparkles size={16}/><span><b>For the best result</b> Use even lighting and make sure the entire garment is visible.</span></div>
+    <div className="tip"><Sparkles size={16} /><span><b>For the best result</b> Use even lighting and make sure the entire garment is visible.</span></div>
   </Step>
 }
 
@@ -287,44 +287,44 @@ function AvatarStep({ project, save, nav, error, setError }) {
       setError(e.message || 'Could not save your avatar selection. Please try again.')
     }
   }
-  if (!project.id) return <Navigate to="/create/upload" replace/>
-  return <Step number="02" title="Choose your canvas" intro="Pick from 20 preset avatars or create a custom AI avatar from guided attributes." footer={<StepFooter back onBack={() => nav('/create/upload')} next="Add direction" onNext={next} busy={creating}/> }>
+  if (!project.id) return <Navigate to="/create/upload" replace />
+  return <Step number="02" title="Choose your canvas" intro="Pick from 20 preset avatars or create a custom AI avatar from guided attributes." footer={<StepFooter back onBack={() => nav('/create/upload')} next="Add direction" onNext={next} busy={creating} />}>
     <div className="choice-grid avatars">
       <button type="button" onClick={() => setCreatorOpen(true)} className="choice-card avatar-card create-avatar-card">
-        <div className="avatar-visual create-avatar-visual"><WandSparkles size={30}/><b>Create an avatar</b><span>Design one with age, ethnicity, skin tone, style, and keywords.</span></div>
+        <div className="avatar-visual create-avatar-visual"><WandSparkles size={30} /><b>Create an avatar</b><span>Design one with age, ethnicity, skin tone, style, and keywords.</span></div>
         <div className="choice-meta"><span><b>AI custom</b><small>Prompt-built avatar</small></span><i>+</i></div>
       </button>
       {customAvatars.map(a => <button type="button" key={a.id} onClick={() => chooseAvatar(a)} className={`choice-card avatar-card ${selected === a.id ? 'selected' : ''}`}>
-        <div className="avatar-visual"><img className="avatar-photo" src={assetUrl(a.image)} alt={`${a.name} avatar`}/><span className="dummy-tag">CUSTOM</span></div>
-        <div className="choice-meta"><span><b>{a.name}</b><small>{a.note}</small></span><i>{selected === a.id && <Check size={15}/>}</i></div>
+        <div className="avatar-visual"><img className="avatar-photo" src={assetUrl(a.image)} alt={`${a.name} avatar`} /><span className="dummy-tag">CUSTOM</span></div>
+        <div className="choice-meta"><span><b>{a.name}</b><small>{a.note}</small></span><i>{selected === a.id && <Check size={15} />}</i></div>
       </button>)}
       {avatars.map(a => <button type="button" key={a.id} onClick={() => chooseAvatar(a)} className={`choice-card avatar-card ${selected === a.id ? 'selected' : ''}`}>
-        <div className="avatar-visual placeholder-avatar" style={{background:a.backdrop}}><MiniAvatar skin={a.skin} hair={a.hair} outfit={a.outfit}/></div>
-        <div className="choice-meta"><span><b>{a.name}</b><small>{a.note}</small></span><i>{selected === a.id && <Check size={15}/>}</i></div>
+        <div className="avatar-visual placeholder-avatar" style={{ background: a.backdrop }}><MiniAvatar skin={a.skin} hair={a.hair} outfit={a.outfit} /></div>
+        <div className="choice-meta"><span><b>{a.name}</b><small>{a.note}</small></span><i>{selected === a.id && <Check size={15} />}</i></div>
       </button>)}
     </div>
     {error && <p className="error">{error}</p>}
     {creatorOpen && <div className="modal-backdrop" role="presentation">
       <section className="avatar-modal" role="dialog" aria-modal="true" aria-labelledby="avatar-modal-title">
-        <div className="modal-heading"><span className="eyebrow"><Sparkles size={14}/> Custom avatar</span><button className="icon-button" onClick={() => !creating && setCreatorOpen(false)} disabled={creating}><X size={18}/></button></div>
+        <div className="modal-heading"><span className="eyebrow"><Sparkles size={14} /> Custom avatar</span><button className="icon-button" onClick={() => !creating && setCreatorOpen(false)} disabled={creating}><X size={18} /></button></div>
         <h3 id="avatar-modal-title">Design an avatar prompt</h3>
         <p>Choose the attributes, add a few keywords, and Stitches will send one constructed prompt to the avatar model.</p>
         <div className="avatar-builder">
           <label><span>Gender</span><select value={avatarForm.gender} onChange={e => updateAvatarForm('gender', e.target.value)}><option value="female">Female</option><option value="male">Male</option></select></label>
-          <label><span>Age</span><input value={avatarForm.age} onChange={e => updateAvatarForm('age', e.target.value)} placeholder="mid 20s"/></label>
-          <label><span>Ethnicity</span><input value={avatarForm.ethnicity} onChange={e => updateAvatarForm('ethnicity', e.target.value)} placeholder="South Asian"/></label>
-          <label><span>Skin tone</span><input value={avatarForm.skinTone} onChange={e => updateAvatarForm('skinTone', e.target.value)} placeholder="warm medium brown"/></label>
-          <label><span>Body type</span><input value={avatarForm.bodyType} onChange={e => updateAvatarForm('bodyType', e.target.value)} placeholder="average build"/></label>
-          <label><span>Hair</span><input value={avatarForm.hair} onChange={e => updateAvatarForm('hair', e.target.value)} placeholder="dark natural hair"/></label>
-          <label><span>Expression</span><input value={avatarForm.expression} onChange={e => updateAvatarForm('expression', e.target.value)} placeholder="calm confident expression"/></label>
-          <label><span>Pose</span><input value={avatarForm.pose} onChange={e => updateAvatarForm('pose', e.target.value)} placeholder="relaxed front-facing pose"/></label>
-          <label><span>Styling</span><input value={avatarForm.style} onChange={e => updateAvatarForm('style', e.target.value)} placeholder="minimal contemporary styling"/></label>
-          <label><span>Background</span><input value={avatarForm.background} onChange={e => updateAvatarForm('background', e.target.value)} placeholder="plain warm neutral studio"/></label>
-          <label className="wide"><span>Keywords</span><textarea value={avatarForm.keywords} onChange={e => updateAvatarForm('keywords', e.target.value)} maxLength={500} placeholder="e.g. premium streetwear, grounded, cinematic daylight, confident retail model"/></label>
+          <label><span>Age</span><input value={avatarForm.age} onChange={e => updateAvatarForm('age', e.target.value)} placeholder="mid 20s" /></label>
+          <label><span>Ethnicity</span><input value={avatarForm.ethnicity} onChange={e => updateAvatarForm('ethnicity', e.target.value)} placeholder="South Asian" /></label>
+          <label><span>Skin tone</span><input value={avatarForm.skinTone} onChange={e => updateAvatarForm('skinTone', e.target.value)} placeholder="warm medium brown" /></label>
+          <label><span>Body type</span><input value={avatarForm.bodyType} onChange={e => updateAvatarForm('bodyType', e.target.value)} placeholder="average build" /></label>
+          <label><span>Hair</span><input value={avatarForm.hair} onChange={e => updateAvatarForm('hair', e.target.value)} placeholder="dark natural hair" /></label>
+          <label><span>Expression</span><input value={avatarForm.expression} onChange={e => updateAvatarForm('expression', e.target.value)} placeholder="calm confident expression" /></label>
+          <label><span>Pose</span><input value={avatarForm.pose} onChange={e => updateAvatarForm('pose', e.target.value)} placeholder="relaxed front-facing pose" /></label>
+          <label><span>Styling</span><input value={avatarForm.style} onChange={e => updateAvatarForm('style', e.target.value)} placeholder="minimal contemporary styling" /></label>
+          <label><span>Background</span><input value={avatarForm.background} onChange={e => updateAvatarForm('background', e.target.value)} placeholder="plain warm neutral studio" /></label>
+          <label className="wide"><span>Keywords</span><textarea value={avatarForm.keywords} onChange={e => updateAvatarForm('keywords', e.target.value)} maxLength={500} placeholder="e.g. premium streetwear, grounded, cinematic daylight, confident retail model" /></label>
         </div>
         <div className="prompt-preview"><div><span>Prompt preview</span><small>{promptPreview.length} characters</small></div><p>{promptPreview}</p></div>
         {creatorError && <p className="error">{creatorError}</p>}
-        <div className="modal-actions"><button className="secondary" onClick={() => setCreatorOpen(false)} disabled={creating}>Cancel</button><button className="primary" onClick={createAvatar} disabled={creating}>{creating ? <><span className="spinner"/> Creating avatar…</> : <><WandSparkles size={17}/> Generate avatar</>}</button></div>
+        <div className="modal-actions"><button className="secondary" onClick={() => setCreatorOpen(false)} disabled={creating}>Cancel</button><button className="primary" onClick={createAvatar} disabled={creating}>{creating ? <><span className="spinner" /> Creating avatar…</> : <><WandSparkles size={17} /> Generate avatar</>}</button></div>
       </section>
     </div>}
   </Step>
@@ -349,19 +349,19 @@ function DirectionStep({ project, save, update, nav, busy, setBusy, error, setEr
     if (!project.id || !project.selectedAvatar) return setError('A previous selection is missing. Please revisit the earlier steps.')
     setBusy(true); setError('')
     try {
-      await save({prompt})
-      const res = await apiFetch(`/api/projects/${project.id}/generate`, {method:'POST'})
+      await save({ prompt })
+      const res = await apiFetch(`/api/projects/${project.id}/generate`, { method: 'POST' })
       const data = await res.json(); if (!res.ok) throw new Error(data.error)
       update(data)
       const completed = await waitForGeneration(project.id)
       update(completed)
       nav('/create/result')
-    } catch(e) { setError(e.message) } finally { setBusy(false) }
+    } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
-  if (!project.id) return <Navigate to="/create/upload" replace/>
-  if (!project.selectedAvatar) return <Navigate to="/create/avatar" replace/>
-  return <Step number="03" title="Add your point of view" intro="Optional: tell the studio about styling, mood, pose, or small details you want to see." footer={<StepFooter back onBack={() => nav('/create/avatar')} next="Generate" busyLabel="Generating…" icon={<WandSparkles size={17}/>} onNext={generate} busy={busy}/> }>
-    <div className="prompt-card"><div className="prompt-top"><span>CREATIVE DIRECTION</span><span className="optional">OPTIONAL</span></div><textarea maxLength={3000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="e.g. Minimal styling, soft morning light, confident pose, keep the silhouette relaxed…"/><div className="prompt-bottom"><span>{prompt.length} / 3000</span></div></div>
+  if (!project.id) return <Navigate to="/create/upload" replace />
+  if (!project.selectedAvatar) return <Navigate to="/create/avatar" replace />
+  return <Step number="03" title="Add your point of view" intro="Optional: tell the studio about styling, mood, pose, or small details you want to see." footer={<StepFooter back onBack={() => nav('/create/avatar')} next="Generate" busyLabel="Generating…" icon={<WandSparkles size={17} />} onNext={generate} busy={busy} />}>
+    <div className="prompt-card"><div className="prompt-top"><span>CREATIVE DIRECTION</span><span className="optional">OPTIONAL</span></div><textarea maxLength={3000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="e.g. Minimal styling, soft morning light, confident pose, keep the silhouette relaxed…" /><div className="prompt-bottom"><span>{prompt.length} / 3000</span></div></div>
     <div className="suggestions"><span>Try a direction</span><div>{['Soft natural light', 'Confident editorial pose', 'Minimal accessories'].map(s => <button key={s} onClick={() => setPrompt(p => p ? `${p}, ${s.toLowerCase()}` : s)}>{s}</button>)}</div></div>
     {error && <p className="error">{error}</p>}
   </Step>
@@ -416,12 +416,12 @@ function ResultStep({ project, update, reset, nav }) {
       setRegenerating(false)
     }
   }
-  if (!project.resultUrl) return <Navigate to="/create/direction" replace/>
-  return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14}/> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={assetUrl(project.resultUrl)} download="stitches-placement.png"><Download size={17}/> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark"/> Regenerating…</> : <><WandSparkles size={17}/> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17}/> Start another</button></div><section className="feedback-block"><span>How did this placement turn out?</span><div><button className={feedback === 'good' ? 'selected' : ''} aria-pressed={feedback === 'good'} onClick={() => submitFeedback('good')}>👍 Good</button><button className={feedback === 'bad' ? 'selected' : ''} aria-pressed={feedback === 'bad'} onClick={() => submitFeedback('bad')}>👎 Bad</button></div></section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a=>a.id===project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={assetUrl(project.garmentUrl)} alt="Uploaded garment"/></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={assetUrl(project.resultUrl)} alt="Generated garment placement"/>{regenerating && <span className="generation-overlay"><i className="spinner"/> Creating a new version…</span>}</div></figure></section></main>
+  if (!project.resultUrl) return <Navigate to="/create/direction" replace />
+  return <main className="result-page"><div className="result-copy"><span className="eyebrow"><Check size={14} /> Placement complete</span><h2>Your visual is ready.</h2><p>A first look at your garment on the avatar you selected.</p><div className="result-actions has-three"><a className="primary" href={assetUrl(project.resultUrl)} download="stitches-placement.png"><Download size={17} /> Download</a><button className="secondary" onClick={regenerate} disabled={regenerating}>{regenerating ? <><span className="spinner dark" /> Regenerating…</> : <><WandSparkles size={17} /> Regenerate</>}</button><button className="secondary" onClick={startOver} disabled={regenerating}><RotateCcw size={17} /> Start another</button></div><section className="feedback-block"><span>How did this placement turn out?</span><div><button className={feedback === 'good' ? 'selected' : ''} aria-pressed={feedback === 'good'} onClick={() => submitFeedback('good')}>👍 Good</button><button className={feedback === 'bad' ? 'selected' : ''} aria-pressed={feedback === 'bad'} onClick={() => submitFeedback('bad')}>👎 Bad</button></div></section>{resultError && <p className="error">{resultError}</p>}<div className="result-details"><span><b>Avatar</b>{project.selectedAvatarName || avatars.find(a => a.id === project.selectedAvatar)?.name || 'Custom avatar'}</span><span><b>Format</b>Generated output</span></div></div><section className={`comparison-panel ${regenerating ? 'is-loading' : ''}`}><figure className="comparison-card original"><figcaption><span>01</span> Uploaded garment</figcaption><div><img src={assetUrl(project.garmentUrl)} alt="Uploaded garment" /></div></figure><figure className="comparison-card generated"><figcaption><span>02</span> Generated result</figcaption><div><img src={assetUrl(project.resultUrl)} alt="Generated garment placement" />{regenerating && <span className="generation-overlay"><i className="spinner" /> Creating a new version…</span>}</div></figure></section></main>
 }
 
-function StepFooter({ back, onBack, next, onNext, busy, busyLabel = 'Working…', icon }) { return <footer className="step-footer"><div>{back && <button className="secondary" onClick={onBack} disabled={busy}><ArrowLeft size={17}/> Back</button>}</div><button className="primary" onClick={onNext} disabled={busy}>{busy ? <><span className="spinner"/> {busyLabel}</> : <>{icon}<span className="primary-text">{next}{icon && <small className="primary-hint">CTRL+ENTER</small>}</span><ArrowRight size={17}/></>}</button></footer> }
+function StepFooter({ back, onBack, next, onNext, busy, busyLabel = 'Working…', icon }) { return <footer className="step-footer"><div>{back && <button className="secondary" onClick={onBack} disabled={busy}><ArrowLeft size={17} /> Back</button>}</div><button className="primary" onClick={onNext} disabled={busy}>{busy ? <><span className="spinner" /> {busyLabel}</> : <>{icon}<span className="primary-text">{next}{icon && <small className="primary-hint">CTRL+ENTER</small>}</span><ArrowRight size={17} /></>}</button></footer> }
 
-function MiniAvatar({skin, hair, outfit}) { return <div className="mini-avatar"><div className="hair" style={{background:hair}}/><div className="head" style={{background:skin}}><i/><i/></div><div className="neck" style={{background:skin}}/><div className="shirt" style={{background:outfit}}><span/></div></div> }
+function MiniAvatar({ skin, hair, outfit }) { return <div className="mini-avatar"><div className="hair" style={{ background: hair }} /><div className="head" style={{ background: skin }}><i /><i /></div><div className="neck" style={{ background: skin }} /><div className="shirt" style={{ background: outfit }}><span /></div></div> }
 
 export default App

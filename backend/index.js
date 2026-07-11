@@ -96,7 +96,7 @@ const buildAvatarPromptParts = (input = {}) => {
   const age = cleanPart(input.age, 'mid 20s')
   const ethnicity = cleanPart(input.ethnicity, 'globally ambiguous')
   const skinTone = cleanPart(input.skinTone, 'natural medium skin tone')
-  const genderPresentation = cleanPart(input.genderPresentation, 'androgynous fashion model')
+  const genderPresentation = cleanPart(input.genderPresentation, 'fashion model')
   const bodyType = cleanPart(input.bodyType, 'average build')
   const hair = cleanPart(input.hair, 'natural hair, neatly styled')
   const expression = cleanPart(input.expression, 'calm confident expression')
@@ -106,18 +106,18 @@ const buildAvatarPromptParts = (input = {}) => {
   const keywords = cleanPart(input.keywords)
 
   const prompt = [
-      `A realistic full-body studio avatar of a ${age} ${ethnicity} ${genderPresentation}.`,
-      `Skin tone: ${skinTone}. Body type: ${bodyType}. Hair: ${hair}.`,
-      keywords ? `Creative identity keywords: ${keywords}.` : '',
-      `${pose}.`,
-      `${expression}.`,
-      'Simple fitted neutral base outfit for avatar generation only.',
-      'Minimal accessories, clean clothing silhouette, ready for garment replacement in the try-on stage.',
-      `${background}.`,
-      'Clean minimal backdrop, even soft diffused lighting, no harsh shadows, full-body framing with margin above head and below feet.',
-      `${style}.`,
-      'Photorealistic editorial fashion catalog style, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
-    ].filter(Boolean).join(' ')
+    `A realistic full-body studio avatar of a ${age} ${ethnicity} ${genderPresentation}.`,
+    `Skin tone: ${skinTone}. Body type: ${bodyType}. Hair: ${hair}.`,
+    keywords ? `Creative identity keywords: ${keywords}.` : '',
+    `${pose}.`,
+    `${expression}.`,
+    'Simple fitted neutral base outfit for avatar generation only.',
+    'Minimal accessories, clean clothing silhouette, ready for garment replacement in the try-on stage.',
+    `${background}.`,
+    'Clean minimal backdrop, even soft diffused lighting, no harsh shadows, full-body framing with margin above head and below feet.',
+    `${style}.`,
+    'Photorealistic editorial fashion catalog style, sharp focus, high detail, natural lighting, vertical full-body composition, no text, no logos, no watermark, no extra limbs.'
+  ].filter(Boolean).join(' ')
 
   return {
     gender,
